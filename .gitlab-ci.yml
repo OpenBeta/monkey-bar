@@ -1,0 +1,26 @@
+variables:
+  DOCKER_HOST: tcp://docker:2375/
+  DOCKER_DRIVER: overlay2
+  IMAGE_CURRENT: ${CI_REGISTRY_IMAGE}/monkey-bar:$CI_COMMIT_SHORT_SHA
+  IMAGE_LATEST: ${CI_REGISTRY_IMAGE}/monkey-bar:latest 
+
+stages:
+  - build
+  - stage
+
+build monkey-bar image:
+   stage: build
+
+   image: docker:stable
+
+   services:
+      - docker:dind
+      
+   before_script:
+      - docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY
+
+   script:
+      - docker pull $IMAGE_LATEST || true
+      - docker build --cache-from $IMAGE_LATEST --tag $IMAGE_CURRENT --tag $IMAGE_LATEST .
+      - docker push $IMAGE_CURRENT
+      - docker push $IMAGE_LATEST
